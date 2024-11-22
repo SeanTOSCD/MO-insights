@@ -7,7 +7,6 @@ library(DT)
 # === Collect and prepare data
 # Stacking CSV files. The first sets column standards, the rest follow.
 #####
-# Sean did this in Josh's branch.
 
 # Step 1 of 2: We're setting all columns to be read as characters by default
 crash_data <- bind_rows(
@@ -66,7 +65,7 @@ crash_data <- crash_data %>%
 
 
 #####
-# === The User Interface (UI)
+# === The User Interface (UI)!
 #####
 ui <- fluidPage(
   titlePanel("Missouri Traffic Crash Analysis"),
