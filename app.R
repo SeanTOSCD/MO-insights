@@ -37,24 +37,39 @@ crash_data <- bind_rows(
 # Step 2 of 2: Now convert certain columns to other data types with special considerations
 crash_data <- crash_data %>%
   mutate(
+    
     # Made Age a number
     Age = as.numeric(Age),
+    
     # Formatted dates
     Date = as.Date(Date),
+    
     # Formatted time
     Time = format(strptime(Time, format = "%I:%M%p"), "%H:%M:%S"),
+    
     # Made a new column with Date and Time combined (so a full timestamp)
     DateTime = as.POSIXct(paste(Date, Time), format = "%Y-%m-%d %H:%M:%S"),
+    
     # Remove extra space from city & state
     CityState = str_trim(CityState),
+    
     # Converted injury values to uppercase
     Injury = toupper(Injury),
+    
     # Set the values to TRUE or FALSE
-    SafetyDevice = SafetyDevice == "YES"
+    SafetyDevice = SafetyDevice == "YES",
+    
+    # Made a new column with the Season of the crash based on date
+    Season = case_when(
+      format(Date, "%m") %in% c("12", "01", "02") ~ "Winter",
+      format(Date, "%m") %in% c("03", "04", "05") ~ "Spring",
+      format(Date, "%m") %in% c("06", "07", "08") ~ "Summer",
+      format(Date, "%m") %in% c("09", "10", "11") ~ "Fall"
+    )
   )
 
 
-# === Just was to look at the data!
+# === Just to look at the data!
 # glimpse(crash_data)
 # head(crash_data)
 # summary(crash_data)
@@ -71,27 +86,40 @@ ui <- fluidPage(
   titlePanel("Missouri Traffic Crash Analysis"),
   
   fluidRow(
+    
+    # Controls panel
     column(3, wellPanel(
-             selectInput("region", "Select Region/Troop:",
+             
+             # Data table controls (default)
+             selectInput("region", "Troop Selection:",
                          choices = c("All", "A", "C", "F")),
              dateRangeInput("date_range", "Date Range:",
                             start = "2023-11-01", end = "2024-12-31"),
-             # Plot 1
+             
+             # Plot 1 controls
              conditionalPanel(
                condition = "input.tabset_plots == 'tab_1'",
                selectInput("injury_type", "Select Injury Type:",
                            choices = c("All", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
              ),
-             # Plot 2
+             
+             # Plot 2 controls
              conditionalPanel(
                condition = "input.tabset_plots == 'tab_2'",
-               selectInput("injury_type", "Choices Again:",
-                           choices = c("All", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
+               checkboxGroupInput("injury_filter_plot2", "Select Injury Types:", 
+                                  choices = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"),
+                                  selected = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY")),
+               radioButtons("metric_plot2", "Display:", 
+                            choices = c("Count" = "count", "Percentage" = "percent"), 
+                            selected = "count")
              )
            )
     ),
+    
+    # Output panel
     column(9, tabsetPanel(id = "tabset_plots",
-                       # Default Tab: Data Table
+                          
+                       # Default Tab: Data table
                        tabPanel("Data Table",
                                 value = "data_table",
                                 DTOutput("crash_data_table")
@@ -99,13 +127,13 @@ ui <- fluidPage(
                        tabPanel("Plot 1", 
                                 value = "tab_1",
                                 h3("Bar Plot of Age Distribution by Injury Type"),
-                                p("This is a paragraph!"),
+                                p("Distribution of ages in 10-year bins, broken down by injury type."),
                                 plotOutput("plot1")
                        ),
                        tabPanel("Plot 2", 
                                 value = "tab_2",
-                                h3("Plot 2!"),
-                                p("NICE."),
+                                h3("Crashes by Season"),
+                                p("This plot shows the number of crashes by season, broken down by injury type."),
                                 plotOutput("plot2")
                        ),
                        tabPanel("Plot 3", 
@@ -151,62 +179,19 @@ ui <- fluidPage(
 #####
 server <- function(input, output, session) {
   
-  # Reactive data filtering
+  # Main data table filtering by Troop or date range
   reactive_crash_data <- reactive({
     filtered_data <- crash_data
     
-    # Filter by region (Troop)
     if (input$region != "All") {
       filtered_data <- filtered_data %>% filter(Troop == input$region)
     }
     
-    # Filter by date range
     filtered_data <- filtered_data %>% filter(Date >= input$date_range[1] & Date <= input$date_range[2])
-    
     return(filtered_data)
   })
   
-  
-  #####
-  # === Plots!!!
-  #####
-  
-  # Reactive filtered data for Plot 1
-  reactive_plot1_data <- reactive({
-    data <- reactive_crash_data()
-    if (input$injury_type != "All") {
-      data <- data %>% filter(Injury == input$injury_type)
-    }
-    return(data)
-  })
-  
-  # Plot for Tab 1
-  output$plot1 <- renderPlot({
-    reactive_plot1_data() %>%
-      ggplot(aes(x = Age)) +
-      geom_bar(fill = "steelblue") +
-      labs(
-        title = "Age Distribution",
-        x = "Age",
-        y = "Count"
-      ) +
-      theme_minimal()
-  })
-  
-  # Plot for Tab 2
-  output$plot2 <- renderPlot({
-    reactive_plot1_data() %>%
-      ggplot(aes(x = Age)) +
-      geom_bar(fill = "steelblue") +
-      labs(
-        title = "Age Distribution",
-        x = "Age",
-        y = "Count"
-      ) +
-      theme_minimal()
-  })
-  
-  # The main data table
+  # Main data table output
   output$crash_data_table <- renderDT({
     datatable(
       reactive_crash_data(),
@@ -221,6 +206,79 @@ server <- function(input, output, session) {
     )
   })
   
+  
+  #####
+  # === Custom plots!
+  #####s
+  
+  # Reactive data for Plot 1
+  reactive_plot1_data <- reactive({
+    data <- reactive_crash_data()
+    if (input$injury_type != "All") {
+      data <- data %>% filter(Injury == input$injury_type)
+    }
+    
+    # Bin ages into groups
+    data <- data %>%
+      mutate(AgeGroup = cut(Age, breaks = seq(0, 100, by = 10), right = FALSE, 
+                            labels = paste(seq(0, 90, by = 10), seq(10, 100, by = 10) - 1, sep = "-")))
+    return(data)
+  })
+  
+  # Plot 1 output
+  output$plot1 <- renderPlot({
+    reactive_plot1_data() %>%
+      ggplot(aes(x = AgeGroup, fill = Injury)) +
+      geom_bar(position = "dodge") +
+      facet_wrap(~Injury, scales = "free_y") +
+      labs(
+        title = "Age Distribution by Injury Type",
+        x = "Age Group",
+        y = "Count",
+        fill = "Injury Type"
+      ) +
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  })
+  
+  # Reactive data for Plot 2
+  reactive_plot2_data <- reactive({
+    data <- reactive_crash_data()  # Use globally filtered data
+    
+    # Filter by selected injury types
+    if (!is.null(input$injury_filter_plot2)) {
+      data <- data %>% filter(Injury %in% input$injury_filter_plot2)
+    }
+    
+    # Group data by Season and Injury
+    data <- data %>%
+      group_by(Season, Injury) %>%
+      summarise(crash_count = n(), .groups = "drop") %>%
+      mutate(Season = factor(Season, levels = c("Winter", "Spring", "Summer", "Fall")))  # Order seasons
+    
+    # Adjust for percentage if selected
+    if (input$metric_plot2 == "percent") {
+      data <- data %>%
+        group_by(Season) %>%
+        mutate(crash_count = crash_count / sum(crash_count) * 100)
+    }
+    
+    return(data)
+  })
+  
+  # Plot 2 output
+  output$plot2 <- renderPlot({
+    reactive_plot2_data() %>%
+      ggplot(aes(x = Season, y = crash_count, fill = Injury)) +
+      geom_bar(stat = "identity", position = "dodge") +
+      labs(
+        title = "Crashes by Season and Injury Type",
+        x = "Season",
+        y = "Number of Crashes",
+        fill = "Injury Type"
+      ) +
+      theme_minimal()
+  })
 }
 
 
