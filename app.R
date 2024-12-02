@@ -119,7 +119,7 @@ ui <- fluidPage(
             tags$div(
               style = "margin-bottom: 15px;",
               tags$strong("Application Instructions: "),
-              tags$p("Navigate tabs for different data visualizations data-specific controls. All visualizations allow Troop selection and date range.")
+              tags$p("Navigate tabs for different data visualizations and data-specific controls. All visualizations allow Troop selection and date range.")
             ),
              
              # Default controls for ALL panels
