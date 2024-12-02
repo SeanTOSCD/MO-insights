@@ -3,6 +3,9 @@ library(tidyverse)
 #install.packages("DT")
 library(DT)
 
+library(ggplot2)
+library(dplyr)
+
 #####
 # === Collect and prepare data
 # Stacking CSV files. The first sets column standards, the rest follow.
@@ -36,7 +39,14 @@ crash_data <- bind_rows(
 
 # Step 2 of 2: Now convert certain columns to other data types with special considerations
 crash_data <- crash_data %>%
+  
+  group_by(Date, Time, Troop) %>%
+  summarize(Count = n(), .groups = 'drop')  %>%
+  
   mutate(
+    
+    Hour = as.numeric(format(strptime(Time, "%H:%M:%S"), "%H")),
+    Month = format(Date, "%Y-%m"),  # Formats to "YYYY-MM"
     
     # Made Age a number
     Age = as.numeric(Age),
@@ -284,7 +294,8 @@ ui <- fluidPage(
                        # Plot 7 output
                        tabPanel("Plot 7", 
                                 value = "tab_7",
-                                h3("Plot 7!")
+                                h3("Crash Data Bubble Chart (Count of Troop)"),
+                                plotOutput("plot7"),
                        ),
                        # Plot 8 output
                        tabPanel("Plot 8", 
@@ -504,7 +515,6 @@ server <- function(input, output, session) {
   })
   
   # Plot 5 output
-  # Plot 5 output
   output$plot5 <- renderPlot({
     plot_data <- reactive_plot5_data()
     
@@ -589,6 +599,21 @@ server <- function(input, output, session) {
       ) +
       theme_minimal()
   })
+  
+  # Plot 7 output - Create the updated plot “Crash Data Bubble Chart (Count of Troop)”
+  ggplot(crash_data_troop, aes(x = Month, y = Hour, size = Count, color = Troop)) +
+    geom_point(alpha = 0.6) +
+    scale_size_continuous(name = "Count of Troop", range = c(3, 15)) +
+    labs(
+      title = "Crash Data Bubble Chart (Count of Troop)",
+      x = "Month",
+      y = "Hour of the Day"
+    ) +
+    theme_minimal() +
+    theme(
+      legend.position = "right",
+      axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
+    )
   
 }
 
