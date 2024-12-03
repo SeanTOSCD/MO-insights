@@ -151,7 +151,7 @@ ui <- fluidPage(
              # Plot 1 controls
              conditionalPanel(
                condition = "input.tabset_plots == 'tab_1'",
-               selectInput("injury_type", "Select Injury Type:",
+               selectInput("injury_type_plot1", "Select Injury Type:",
                            choices = c("All", "NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
              ),
              
@@ -212,7 +212,21 @@ ui <- fluidPage(
               condition = "input.tabset_plots == 'tab_9'",
               selectInput("injury_severity", "Select Injury Severity:",
                           choices = c("All", "NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
-            )
+            ),
+            
+            # Plot 10 controls
+            conditionalPanel(
+              condition = "input.tabset_plots == 'tab_10'",
+              selectInput("injury_type_plot10", "Select Injury Type:",
+                          choices = c("All", "NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
+            ),
+            
+            # Plot 11 controls
+            conditionalPanel(
+              condition = "input.tabset_plots == 'tab_11'",
+              selectInput("injury_type_plot11", "Select Injury Type:",
+                          choices = c("All", "NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
+            ),
            )
     ),
     
@@ -340,10 +354,19 @@ ui <- fluidPage(
                                 plotOutput("plot9")
                        ),
                        # Plot 10 output
-                       tabPanel("Plot 10", 
+                       tabPanel("Safety Device Usage", 
                                 value = "tab_10",
-                                h3("Plot 10!")
-                       )
+                                h3("Safety Device Usage"),
+                                p("Bar plot showing the distribution of safety device usage."),
+                                plotOutput("plot10")
+                       ),
+                       # Plot 11 output
+                       tabPanel("Age Distribution by Injury Severity", 
+                                value = "tab_11",
+                                h3("Age Distribution by Injury Severity"),
+                                p("Bar plot showing the distribution of ages based on injury severity"),
+                                plotOutput("plot11")
+                       ),
            )
     )
   )
@@ -390,8 +413,8 @@ server <- function(input, output, session) {
   # Reactive data for Plot 1
   reactive_plot1_data <- reactive({
     data <- reactive_crash_data()
-    if (input$injury_type != "All") {
-      data <- data %>% filter(Injury == input$injury_type)
+    if (input$injury_type_plot1 != "All") {
+      data <- data %>% filter(Injury == input$injury_type_plot1)
     }
     
     # Bin ages into groups
@@ -672,7 +695,7 @@ server <- function(input, output, session) {
       summarise(Count = n(), .groups = 'drop')
   })
   
-  # Plot 8 output
+  # Plot 9 output
   output$plot9 <- renderPlot({
     reactive_plot9_data() %>%
       ggplot(aes(x = HourLabel, y = Count, fill = Injury)) +
@@ -685,6 +708,53 @@ server <- function(input, output, session) {
       ) +
       theme_minimal() +
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  })
+  
+  # Reactive data for plot 10
+  reactive_plot10_data <- reactive({
+    data <- reactive_crash_data() 
+    if (input$injury_type_plot10 != "All") {
+      data <- data %>% filter(Injury == input$injury_type_plot10)
+    }
+    
+    return(data)
+  })
+  
+  #Plot for Tab 10
+  output$plot10 <- renderPlot({
+    reactive_plot10_data() %>%
+      ggplot(aes(x = as.factor(SafetyDevice))) + 
+      geom_bar(fill = "steelblue") +
+      labs(
+        title = "Safety Device Usage by Injury Type",
+        x = "Safety Device Used (Not Used/Used)",
+        y = "Count"
+      ) +
+      scale_x_discrete(labels = c("FALSE" = "Not Used", "TRUE" = "Used")) +  # Optional: Renaming the axis labels for clarity
+      theme_minimal()
+  })
+  
+  # Reactive data for plot 11
+  reactive_plot11_data <- reactive({
+    data <- reactive_crash_data()  
+    if (input$injury_type_plot11 != "All") {
+      data <- data %>% filter(Injury == input$injury_type_plot11)
+    }
+    
+    return(data)
+  })
+  
+  #Plot for Tab 11
+  output$plot11 <- renderPlot({
+    reactive_plot11_data() %>%
+      ggplot(aes(x = Age)) + 
+      geom_bar(fill = "steelblue") +
+      labs(
+        title = "Age Distribution by Injury Severity",
+        x = "Age",
+        y = "Count"
+      ) +
+      theme_minimal()
   })
   
 }
