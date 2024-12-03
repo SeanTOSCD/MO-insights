@@ -1,43 +1,46 @@
 library(shiny)
 library(tidyverse)
-#install.packages("DT")
 library(DT)
-
 library(ggplot2)
 library(dplyr)
 
-#####
-# === Collect and prepare data
-# Stacking CSV files. The first sets column standards, the rest follow.
-#####
+#### ========== Data Preparation ==========
 
-# Step 1 of 2: We're setting all columns to be read as characters by default
+# Step 1 of 2:
+# We're setting all columns to be read as characters by default.
+# The first file sets column standards and the rest follow beneath.
 crash_data <- bind_rows(
-  read_csv("./troop_a.csv",
-           col_types = cols(
-             PersonType = col_character(),
-             Age = col_character(),
-             CityState = col_character(),
-             Injury = col_character(),
-             SafetyDevice = col_character(),
-             Date = col_character(),
-             Time = col_character(),
-             County = col_character(),
-             Location = col_character(),
-             Troop = col_character()
-           ),
-           show_col_types = FALSE
+  read_csv(
+    "./troop_a.csv",
+    col_types = cols(
+      PersonType = col_character(),
+      Age = col_character(),
+      CityState = col_character(),
+      Injury = col_character(),
+      SafetyDevice = col_character(),
+      Date = col_character(),
+      Time = col_character(),
+      County = col_character(),
+      Location = col_character(),
+      Troop = col_character()
+    ),
+    show_col_types = FALSE
   ),
-  read_csv("./troop_c.csv",
-           col_types = cols(.default = "c"),
-           show_col_types = FALSE),
-  read_csv("./troop_f.csv",
-           col_types = cols(.default = "c"),
-           show_col_types = FALSE)
+  read_csv(
+    "./troop_c.csv",
+    col_types = cols(.default = "c"),
+    show_col_types = FALSE
+  ),
+  read_csv(
+    "./troop_f.csv",
+    col_types = cols(.default = "c"),
+    show_col_types = FALSE
+  )
 )
 
-
-# Step 2 of 2: Now convert certain columns to other data types with special considerations
+# Step 2 of 2:
+# Now convert specific columns to other data types as needed.
+# Also create new columns from existing data.
 crash_data <- crash_data %>%
   mutate(
     
@@ -50,7 +53,7 @@ crash_data <- crash_data %>%
     # Formatted time
     Time = format(strptime(Time, format = "%I:%M%p"), "%H:%M:%S"),
     
-    # Made a new column with Date and Time combined (so a full timestamp)
+    # NEW COLUMN: Made a new column with Date and Time combined (so a full timestamp)
     DateTime = as.POSIXct(paste(Date, Time), format = "%Y-%m-%d %H:%M:%S"),
     
     # Extract hour from DateTime
@@ -66,12 +69,15 @@ crash_data <- crash_data %>%
     County = ifelse(County == "ST. LOUIS CITY", "ST. LOUIS", County),
     
     # Set order for injury severity
-    Injury = factor(Injury, levels = c("NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL")),
+    Injury = factor(
+      Injury,
+      levels = c("NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL")
+    ),
     
     # Set the values to TRUE or FALSE
     SafetyDevice = SafetyDevice == "YES",
     
-    # Made a new column with the Season of the crash based on date
+    # NEW COLUMN: Made a new column with the Season of the crash based on date
     Season = case_when(
       format(Date, "%m") %in% c("12", "01", "02") ~ "Winter",
       format(Date, "%m") %in% c("03", "04", "05") ~ "Spring",
@@ -80,41 +86,32 @@ crash_data <- crash_data %>%
     )
   )
 
+#### ========== UI Components ==========
 
-# === Just to look at the data!
-# glimpse(crash_data)
-# head(crash_data)
-# summary(crash_data)
-# unique(crash_data$Injury)
-# table(crash_data$County)
-# crash_data_70_plus <- crash_data %>% filter(Age >= 70)
-# rm(crash_data_70_plus)
-
-
-#####
-# === The User Interface (UI)!
-#####
 ui <- fluidPage(
   
+  # CSS for the entire program
   tags$head(
     tags$style(HTML("
-    .nav-tabs {
-      border-bottom: 2px solid #ddd;
-      margin-bottom: 2rem;
-    }
-    .nav-tabs > li > a {
-      color: #337ab7;
-      font-weight: bold;
-      font-size: 14px;
-      padding-top: 6px;
-      padding-bottom: 6px;
-    }
-    .nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus {
-      color: #fff;
-      background-color: #337ab7;
-      border: 1px solid #ddd;
-      border-bottom-color: transparent;
-    }
+      .nav-tabs {
+        border-bottom: 2px solid #ddd;
+        margin-bottom: 2rem;
+      }
+      .nav-tabs > li > a {
+        color: #337ab7;
+        font-weight: bold;
+        font-size: 14px;
+        padding-top: 6px;
+        padding-bottom: 6px;
+      }
+      .nav-tabs > li.active > a,
+      .nav-tabs > li.active > a:hover,
+      .nav-tabs > li.active > a:focus {
+        color: #fff;
+        background-color: #337ab7;
+        border: 1px solid #ddd;
+        border-bottom-color: transparent;
+      }
   "))
   ),
   
@@ -125,244 +122,260 @@ ui <- fluidPage(
     # Controls panel
     column(3, wellPanel(
       
-            tags$div(
-              style = "margin-bottom: 15px;",
-              tags$strong("Application Instructions: "),
-              tags$p("Navigate tabs for different data visualizations and data-specific controls. All visualizations allow Troop selection and date range.")
-            ),
+      tags$div(
+        style = "margin-bottom: 15px;",
+        tags$strong("Application Instructions: "),
+        tags$p("Navigate tabs for different data visualizations and data-specific controls.
+               All visualizations allow Troop selection and date range.")
+      ),
              
-             # Default controls for ALL panels
-             selectInput("region", "Select a Troop to View:",
-                  choices = c("All Troops" = "All", 
-                              "Troop A (incl. Kansas City)" = "A", 
-                              "Troop C (incl. St. Louis)" = "C", 
-                              "Troop F (incl. Columbia, Jefferson City)" = "F")),
+      # Default controls for ALL panels
+      selectInput("region", "Select a Troop to View:",
+          choices = c("All Troops" = "All", 
+                      "Troop A (incl. Kansas City)" = "A", 
+                      "Troop C (incl. St. Louis)" = "C", 
+                      "Troop F (incl. Columbia, Jefferson City)" = "F")),
+      
+      dateRangeInput("date_range", "Date Range:",
+                    start = "2023-11-01", end = "2024-12-05"),
              
-             dateRangeInput("date_range", "Date Range:",
-                            start = "2023-11-01", end = "2024-12-05"),
-             
-             # Plot 1 controls
-             conditionalPanel(
-               condition = "input.tabset_plots == 'tab_1'",
-               selectInput("injury_type_plot1", "Select Injury Type:",
-                           choices = c("All", "NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
-             ),
-             
-             # Plot 2 controls
-             conditionalPanel(
-               condition = "input.tabset_plots == 'tab_2'",
-               checkboxGroupInput("injury_filter_plot2", "Select Injury Types:", 
-                                  choices = c("NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"),
-                                  selected = c("NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL")),
-               radioButtons("metric_plot2", "Display:", 
-                            choices = c("Count" = "count", "Percentage" = "percent"), 
-                            selected = "count")
-             ),
-             # Plot 3 controls
-             conditionalPanel(
-               condition = "input.tabset_plots == 'tab_3'",
-               sliderInput("time_range_plot3", "Select Time Range (Hours):", 
-                           min = 0, max = 24, value = c(0, 24), step = 1)
-             ),
+      # Plot 1 controls
+      conditionalPanel(
+        condition = "input.tabset_plots == 'tab_1'",
+        selectInput("injury_type_plot1", "Select Injury Type:",
+                    choices = c("All", "NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
+      ),
+      
+      # Plot 2 controls
+      conditionalPanel(
+        condition = "input.tabset_plots == 'tab_2'",
+        checkboxGroupInput("injury_filter_plot2", "Select Injury Types:", 
+                          choices = c("NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"),
+                          selected = c("NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL")),
+        radioButtons("metric_plot2", "Display:", 
+                    choices = c("Count" = "count", "Percentage" = "percent"),
+                    selected = "count")
+      ),
+      
+      # Plot 3 controls
+      conditionalPanel(
+        condition = "input.tabset_plots == 'tab_3'",
+        sliderInput("time_range_plot3", "Select Time Range (Hours):",
+                    min = 0, max = 24, value = c(0, 24), step = 1)
+      ),
+      
+      # Plot 4 controls (NONE)
+      
+      # Plot 5 controls
+      conditionalPanel(
+        condition = "input.tabset_plots == 'tab_5'",
+        radioButtons("aggregation_level", "Select Time Interval:",
+                    choices = c("Daily" = "day", "Weekly" = "week", "Monthly" = "month"),
+                    selected = "week")
+      ),
+      
+      # Plot 6 controls
+      conditionalPanel(
+        condition = "input.tabset_plots == 'tab_6'",
+        sliderInput("top_n_counties", "Number of Counties to Display:",
+                    min = 5, max = 20, value = 10, step = 1),
+        checkboxGroupInput("county_injury_filter", "Select Injury Types:",
+                           choices = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"),
+                           selected = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"))
+      ),
             
-             # Plot 4 controls (NONE)
-             
-             # Plot 5 controls
-             conditionalPanel(
-               condition = "input.tabset_plots == 'tab_5'",
-               radioButtons("aggregation_level", "Select Time Interval:",
-                            choices = c("Daily" = "day", "Weekly" = "week", "Monthly" = "month"),
-                            selected = "week")
-             ),
-             
-             # Plot 6 controls
-             conditionalPanel(
-               condition = "input.tabset_plots == 'tab_6'",
-               sliderInput("top_n_counties", "Number of Counties to Display:",
-                           min = 5, max = 20, value = 10, step = 1),
-               checkboxGroupInput("county_injury_filter", "Select Injury Types:",
-                                  choices = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"),
-                                  selected = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"))
-             ),
-            
-            # Plot 7 controls (NONE)
-            
-            # Plot 8 controls
-            conditionalPanel(
-              condition = "input.tabset_plots == 'tab_8'",
-              selectInput("safety_device", "Select Safety Device:",
-                          choices = c("All", "TRUE", "FALSE"))
-            ),
-            
-            # Plot 9 controls
-            conditionalPanel(
-              condition = "input.tabset_plots == 'tab_9'",
-              selectInput("injury_severity", "Select Injury Severity:",
-                          choices = c("All", "NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
-            ),
-            
-            # Plot 10 controls
-            conditionalPanel(
-              condition = "input.tabset_plots == 'tab_10'",
-              selectInput("injury_type_plot10", "Select Injury Type:",
-                          choices = c("All", "NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
-            ),
-            
-            # Plot 11 controls
-            conditionalPanel(
-              condition = "input.tabset_plots == 'tab_11'",
-              selectInput("injury_type_plot11", "Select Injury Type:",
-                          choices = c("NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
-            ),
-           )
-    ),
+      # Plot 7 controls (NONE)
+
+      # Plot 7_0 controls
+      conditionalPanel(
+        condition = "input.tabset_plots == 'tab_7_0'",
+        selectInput("injury_type_plot7_0", "Select Injury Type:",
+                    choices = c("All", "NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
+      ),
+      
+      # Plot 8 controls
+      conditionalPanel(
+        condition = "input.tabset_plots == 'tab_8'",
+        selectInput("safety_device", "Select Safety Device:",
+                    choices = c("All", "TRUE", "FALSE"))
+      ),
+      
+      # Plot 9 controls
+      conditionalPanel(
+        condition = "input.tabset_plots == 'tab_9'",
+        selectInput("injury_severity", "Select Injury Severity:",
+                    choices = c("All", "NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
+      ),
+      
+      # Plot 10 controls
+      conditionalPanel(
+        condition = "input.tabset_plots == 'tab_10'",
+        selectInput("injury_type_plot10", "Select Injury Type:",
+                    choices = c("All", "NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
+      ),
+      
+      # Plot 11 controls
+      conditionalPanel(
+        condition = "input.tabset_plots == 'tab_11'",
+        selectInput("injury_type_plot11", "Select Injury Type:",
+                    choices = c("NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
+      ),
+    )),
     
-    # Output panel
+    # Plots panel
     column(9, tabsetPanel(id = "tabset_plots",
                           
-                       # Default Tab: All Data
-                       tabPanel("All Data",
-                                value = "data_table",
-                                DTOutput("crash_data_table")
-                       ),
-                       
-                       # Plot 1 output
-                       tabPanel("Age Distribution by Injury", 
-                                value = "tab_1",
-                                h3("Age Distribution by Injury Type"),
-                                p("This chart visualizes the age distribution of individuals involved in traffic crashes, grouped by injury severity."),
-                                hr(),
-                                plotOutput("plot1"),
-                                hr(),
-                                strong("Information:"),
-                                tags$ul(
-                                  tags$li("Each bar represents a 10-year age group."),
-                                  tags$li("Use the dropdown menu to filter by specific injury types."),
-                                  tags$li("This visualization helps identify which age groups are most affected by different levels of crash severity.")
-                                ),
-                       ),
-                       
-                       # Plot 2 output
-                       tabPanel("Seasonal Injury Types", 
-                                value = "tab_2",
-                                h3("Crashes by Season and Injury Type"),
-                                p("This chart shows the distribution of traffic crashes across seasons, broken down by injury severity."),
-                                hr(),
-                                plotOutput("plot2"),
-                                hr(),
-                                strong("Information:"),
-                                tags$ul(
-                                  tags$li("Each bar represents the count or percentage of crashes for a specific season."),
-                                  tags$li("Use the checkboxes to filter by specific injury types."),
-                                  tags$li("Switch between counts and percentages using the radio buttons to analyze proportions.")
-                                )
-                       ),
-                       
-                       # Plot 3 output
-                       tabPanel("Injuries by the Hour", 
-                                value = "tab_3",
-                                h3("Crashes by Time of Day"),
-                                p("This chart illustrates the distribution of traffic crashes throughout the day, grouped by injury severity."),
-                                hr(),
-                                plotOutput("plot3"),
-                                hr(),
-                                strong("Information:"),
-                                tags$ul(
-                                  tags$li("Each bar represents the number of crashes during a specific hour of the day."),
-                                  tags$li("Use the slider to adjust the time range displayed."),
-                                  tags$li("This visualization helps identify high-risk times of the day for different levels of crash severity.")
-                                )
-                       ),
-                       
-                       # Plot 4 output
-                       tabPanel("Crash Day/Hour Heatmap", 
-                                value = "tab_4",
-                                h3("Heatmap of Crashes by Day of Week and Hour"),
-                                p("This heatmap visualizes the distribution of traffic crashes by day of the week and time of day."),
-                                hr(),
-                                plotOutput("plot4"),
-                                hr(),
-                                strong("Information:"),
-                                tags$ul(
-                                  tags$li("Each cell represents the number of crashes for a specific hour and day of the week."),
-                                  tags$li("The color intensity indicates the crash count, with darker colors representing higher counts."),
-                                  tags$li("This visualization helps identify patterns in crash occurrences by time and day.")
-                                )
-                       ),
-                       
-                       # Plot 5 output
-                       tabPanel("Crashes Over Time", 
-                                value = "tab_5",
-                                h3("Traffic Crashes Over Time"),
-                                p("This line chart displays the trend of traffic crashes over time, based on the selected date range."),
-                                hr(),
-                                plotOutput("plot5"),
-                                hr(),
-                                strong("Information:"),
-                                tags$ul(
-                                  tags$li("Each point represents the number of crashes within the selected time interval."),
-                                  tags$li("Use the radio buttons to select daily, weekly, or monthly aggregation."),
-                                  tags$li("This visualization helps identify trends or seasonal patterns in crash occurrences.")
-                                )
-                       ),
-                       
-                       # Plot 6 output
-                       tabPanel("Crashes by County", 
-                                value = "tab_6",
-                                h3("Top Counties by Crash Count"),
-                                p("This bar chart highlights the counties with the highest number of crashes, grouped by injury severity."),
-                                hr(),
-                                plotOutput("plot6"),
-                                hr(),
-                                strong("Information:"),
-                                tags$ul(
-                                  tags$li("Each bar represents the crash count for a specific county and injury type."),
-                                  tags$li("Use the slider to adjust the number of counties displayed."),
-                                  tags$li("Filter the injury types displayed using the checkboxes to focus on specific crash severities.")
-                                )
-                       ),
-                       
-                       # Plot 7 output
-                       tabPanel("Bubble Chart: Count by Troop", 
-                                value = "tab_7",
-                                h3("Crash Data Bubble Chart (Count of Troop)"),
-                                plotOutput("plot7"),
-                       ),
-                       # Plot 8 output
-                       tabPanel("Count by Time of Day", 
-                                value = "tab_8",
-                                h3("Count by Time of Day"),
-                                plotOutput("plot8")
-                       ),
-                       # Plot 9 output
-                       tabPanel("Severity by Time of Day", 
-                                value = "tab_9",
-                                h3("Severity by Time of Day"),
-                                plotOutput("plot9")
-                       ),
-                       # Plot 10 output
-                       tabPanel("Safety Device Usage", 
-                                value = "tab_10",
-                                h3("Safety Device Usage"),
-                                p("Bar plot showing the distribution of safety device usage."),
-                                plotOutput("plot10")
-                       ),
-                       # Plot 11 output
-                       tabPanel("Frequency of Age by Injury Severity", 
-                                value = "tab_11",
-                                h3("Frequency of Age by Injury Severity"),
-                                p("Bar plot showing the frequency of ages across injury severity."),
-                                plotOutput("plot11")
-                       ),
-           )
-    )
+      # Default Tab: All Data
+      tabPanel("All Data",
+        value = "data_table",
+        DTOutput("crash_data_table")
+      ),
+      
+      # Plot 1 output
+      tabPanel("Age Distribution by Injury", 
+        value = "tab_1",
+        h3("Age Distribution by Injury Type"),
+        p("This chart visualizes the age distribution of individuals involved in traffic crashes, grouped by injury severity."),
+        hr(),
+        plotOutput("plot1"),
+        hr(),
+        strong("Information:"),
+        tags$ul(
+          tags$li("Each bar represents a 10-year age group."),
+          tags$li("Use the dropdown menu to filter by specific injury types."),
+          tags$li("This visualization helps identify which age groups are most affected by different levels of crash severity.")
+        ),
+      ),
+      
+      # Plot 2 output
+      tabPanel("Seasonal Injury Types", 
+        value = "tab_2",
+        h3("Crashes by Season and Injury Type"),
+        p("This chart shows the distribution of traffic crashes across seasons, broken down by injury severity."),
+        hr(),
+        plotOutput("plot2"),
+        hr(),
+        strong("Information:"),
+        tags$ul(
+          tags$li("Each bar represents the count or percentage of crashes for a specific season."),
+          tags$li("Use the checkboxes to filter by specific injury types."),
+          tags$li("Switch between counts and percentages using the radio buttons to analyze proportions.")
+        )
+      ),
+
+      # Plot 3 output
+      tabPanel("Injuries by the Hour", 
+        value = "tab_3",
+        h3("Crashes by Time of Day"),
+        p("This chart illustrates the distribution of traffic crashes throughout the day, grouped by injury severity."),
+        hr(),
+        plotOutput("plot3"),
+        hr(),
+        strong("Information:"),
+        tags$ul(
+          tags$li("Each bar represents the number of crashes during a specific hour of the day."),
+          tags$li("Use the slider to adjust the time range displayed."),
+          tags$li("This visualization helps identify high-risk times of the day for different levels of crash severity.")
+        )
+      ),
+      
+      # Plot 4 output
+      tabPanel("Crash Day/Hour Heatmap", 
+        value = "tab_4",
+        h3("Heatmap of Crashes by Day of Week and Hour"),
+        p("This heatmap visualizes the distribution of traffic crashes by day of the week and time of day."),
+        hr(),
+        plotOutput("plot4"),
+        hr(),
+        strong("Information:"),
+        tags$ul(
+          tags$li("Each cell represents the number of crashes for a specific hour and day of the week."),
+          tags$li("The color intensity indicates the crash count, with darker colors representing higher counts."),
+          tags$li("This visualization helps identify patterns in crash occurrences by time and day.")
+        )
+      ),
+      
+      # Plot 5 output
+      tabPanel("Crashes Over Time", 
+        value = "tab_5",
+        h3("Traffic Crashes Over Time"),
+        p("This line chart displays the trend of traffic crashes over time, based on the selected date range."),
+        hr(),
+        plotOutput("plot5"),
+        hr(),
+        strong("Information:"),
+        tags$ul(
+          tags$li("Each point represents the number of crashes within the selected time interval."),
+          tags$li("Use the radio buttons to select daily, weekly, or monthly aggregation."),
+          tags$li("This visualization helps identify trends or seasonal patterns in crash occurrences.")
+        )
+      ),
+      
+      # Plot 6 output
+      tabPanel("Crashes by County", 
+        value = "tab_6",
+        h3("Top Counties by Crash Count"),
+        p("This bar chart highlights the counties with the highest number of crashes, grouped by injury severity."),
+        hr(),
+        plotOutput("plot6"),
+        hr(),
+        strong("Information:"),
+        tags$ul(
+          tags$li("Each bar represents the crash count for a specific county and injury type."),
+          tags$li("Use the slider to adjust the number of counties displayed."),
+          tags$li("Filter the injury types displayed using the checkboxes to focus on specific crash severities.")
+        )
+      ),
+
+      # Plot 7 output
+      tabPanel("Crashes Month/hour Bubble Chart", 
+        value = "tab_7",
+        h3("Crashes Month/hour Bubble Chart"),
+        plotOutput("plot7"),
+      ),
+
+      # Plot 7_0 output
+      tabPanel("Injuries Month/Hour Bubble Chart", 
+        value = "tab_7_0",
+        h3("Injuries Month/Hour Bubble Chart"),
+        plotOutput("plot7_0"),
+      ), 
+      
+      # Plot 8 output
+      tabPanel("Count by Time of Day",
+        value = "tab_8",
+        h3("Count by Time of Day"),
+        plotOutput("plot8")
+      ),
+      
+      # Plot 9 output
+      tabPanel("Severity by Time of Day", 
+        value = "tab_9",
+        h3("Severity by Time of Day"),
+        plotOutput("plot9")
+      ),
+      
+      # Plot 10 output
+      tabPanel("Safety Device Usage", 
+        value = "tab_10",
+        h3("Safety Device Usage"),
+        p("Bar plot showing the distribution of safety device usage."),
+        plotOutput("plot10")
+      ),
+      
+      # Plot 11 output
+      tabPanel("Frequency of Age by Injury Severity", 
+        value = "tab_11",
+        h3("Frequency of Age by Injury Severity"),
+        p("Bar plot showing the frequency of ages across injury severity."),
+        plotOutput("plot11")
+      ),
+    ))
   )
-)
+) # End UI
 
+#### ========== Server Logic ==========
 
-#####
-# === Server logic!
-#####
 server <- function(input, output, session) {
   
   # Main data table filtering by Troop or date range
@@ -390,12 +403,9 @@ server <- function(input, output, session) {
         )
       )
     )
-  })
-  
-  
-  #####
-  # === Custom plots!
-  #####s
+  })  
+
+  # ========== Begin custom plots
   
   # Reactive data for Plot 1
   reactive_plot1_data <- reactive({
@@ -406,8 +416,15 @@ server <- function(input, output, session) {
     
     # Bin ages into groups
     data <- data %>%
-      mutate(AgeGroup = cut(Age, breaks = seq(0, 100, by = 10), right = FALSE, 
-                            labels = paste(seq(0, 90, by = 10), seq(10, 100, by = 10) - 1, sep = "-")))
+      mutate(
+        AgeGroup = cut(
+          Age,
+          breaks = seq(0, 100, by = 10),
+          right = FALSE,
+          labels = paste(seq(0, 90, by = 10), seq(10, 100, by = 10) - 1, sep = "-")
+        )
+      )
+    
     return(data)
   })
   
@@ -429,7 +446,7 @@ server <- function(input, output, session) {
   
   # Reactive data for Plot 2
   reactive_plot2_data <- reactive({
-    data <- reactive_crash_data()  # Use globally filtered data
+    data <- reactive_crash_data()
     
     # Filter by selected injury types
     if (!is.null(input$injury_filter_plot2)) {
@@ -440,7 +457,7 @@ server <- function(input, output, session) {
     data <- data %>%
       group_by(Season, Injury) %>%
       summarise(crash_count = n(), .groups = "drop") %>%
-      mutate(Season = factor(Season, levels = c("Winter", "Spring", "Summer", "Fall")))  # Order seasons
+      mutate(Season = factor(Season, levels = c("Winter", "Spring", "Summer", "Fall")))
     
     # Adjust for percentage if selected
     if (input$metric_plot2 == "percent") {
@@ -577,7 +594,7 @@ server <- function(input, output, session) {
                           "week" = "%Y-%m-%d",
                           "month" = "%Y-%m")
     
-    # Plot the data
+    # Now plot the data
     ggplot(plot_data, aes(x = Period, y = crash_count)) +
       geom_line(color = "steelblue", size = 1) +
       geom_point(color = "darkblue", size = 2) +
@@ -650,7 +667,7 @@ server <- function(input, output, session) {
       summarize(Count = n(), .groups = 'drop') %>%
       mutate(
         Hour = as.numeric(format(strptime(Time, "%H:%M:%S"), "%H")),
-        Month = format(Date, "%Y-%m")  # Formats to "YYYY-MM"
+        Month = format(Date, "%Y-%m")
       )
   })
   
@@ -667,6 +684,53 @@ server <- function(input, output, session) {
       ) +
       labs(
         title = "Crash Data Bubble Chart (Count of Troop)",
+        x = "Month",
+        y = "Hour of the Day"
+      ) +
+      theme_minimal() +
+      theme(
+        legend.position = "right",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5),
+        axis.title.y = element_text(vjust = 1.5),
+        axis.title.x = element_text(vjust = -0.5)
+      )
+  }, height = 650)
+
+  # Reactive data for plot 7_0
+  reactive_plot7_0_data <- reactive({
+    crash_data <- reactive_crash_data() 
+    
+    # Ensure input$injury_type_plot7_0 exists and filter by Injury type
+    if (input$injury_type_plot7_0 != "All") {
+      crash_data <- crash_data %>% filter(Injury == input$injury_type_plot7_0)
+    }
+    
+    # Process the data
+    crash_data %>%
+      group_by(Date, Time, Injury) %>%
+      summarize(Count = n(), .groups = 'drop') %>%
+      mutate(
+        Hour = as.numeric(format(strptime(Time, "%H:%M:%S"), "%H")),
+        Month = format(Date, "%Y-%m")  # Formats to "YYYY-MM"
+      )
+  })
+  
+  # Plot 7_0 output
+  output$plot7_0 <- renderPlot({
+    # Access the reactive data
+    plot_data <- reactive_plot7_0_data()
+    
+    # Generate the plot
+    ggplot(plot_data, aes(x = Month, y = Hour, size = Count, color = Injury)) +
+      geom_point(alpha = 0.6) +
+      scale_size_continuous(name = "Count of Injury", range = c(3, 15)) +
+      scale_y_continuous(
+        breaks = seq(0, 24, by = 2),
+        limits = c(0, 24),
+        expand = c(0, 0)
+      ) +
+      labs(
         x = "Month",
         y = "Hour of the Day"
       ) +
@@ -752,7 +816,7 @@ server <- function(input, output, session) {
         x = "Safety Device Used (Not Used/Used)",
         y = "Count"
       ) +
-      scale_x_discrete(labels = c("FALSE" = "Not Used", "TRUE" = "Used")) +  # Optional: Renaming the axis labels for clarity
+      scale_x_discrete(labels = c("FALSE" = "Not Used", "TRUE" = "Used")) +
       theme_minimal()
   })
   
@@ -774,7 +838,7 @@ server <- function(input, output, session) {
       scale_x_continuous(
         breaks = seq(min(reactive_plot11_data()$Age, na.rm = TRUE), 
                      max(reactive_plot11_data()$Age, na.rm = TRUE), 
-                     by = 2)  # Ensure breaks are every 1 unit
+                     by = 2)
       ) +
       labs(
         title = "Frequency of Age by Injury Severity",
@@ -783,11 +847,7 @@ server <- function(input, output, session) {
       ) +
       theme_minimal()
   })
-  
-}
+} # End server
 
-
-#####
-# === Run the App!
-#####
+#### ========== Run the App ==========
 shinyApp(ui = ui, server = server)
