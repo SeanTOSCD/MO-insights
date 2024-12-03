@@ -210,11 +210,8 @@ ui <- fluidPage(
             # Plot 9 controls
             conditionalPanel(
               condition = "input.tabset_plots == 'tab_9'",
-              sliderInput("top_n_counties", "Number of Counties to Display:",
-                          min = 5, max = 20, value = 10, step = 1),
-              checkboxGroupInput("county_injury_filter", "Select Injury Types:",
-                                 choices = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"),
-                                 selected = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"))
+              selectInput("injury_severity", "Select Injury Severity:",
+                          choices = c("All", "NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
             )
            )
     ),
@@ -337,9 +334,10 @@ ui <- fluidPage(
                                 plotOutput("plot8")
                        ),
                        # Plot 9 output
-                       tabPanel("Plot 9", 
+                       tabPanel("Severity by Time of Day", 
                                 value = "tab_9",
-                                h3("Plot 9!")
+                                h3("Severity by Time of Day"),
+                                plotOutput("plot9")
                        ),
                        # Plot 10 output
                        tabPanel("Plot 10", 
@@ -658,6 +656,32 @@ server <- function(input, output, session) {
         x = "Time of Day",
         y = "Count",
         fill = "Safety Device"
+      ) +
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  })
+  
+  # Reactive data for plot 9
+  reactive_plot9_data <- reactive({
+    data <- reactive_crash_data()
+    if (input$injury_severity != "All") {
+      data <- data %>% filter(Injury == input$injury_severity)
+    }
+    data %>%
+      group_by(Hour, HourLabel, Injury) %>%
+      summarise(Count = n(), .groups = 'drop')
+  })
+  
+  # Plot 8 output
+  output$plot9 <- renderPlot({
+    reactive_plot9_data() %>%
+      ggplot(aes(x = HourLabel, y = Count, fill = Injury)) +
+      geom_bar(stat = "identity", position = "dodge") +
+      labs(
+        title = "Time of Day vs. Injury Severity",
+        x = "Time of Day",
+        y = "Count",
+        fill = "Injury Severity"
       ) +
       theme_minimal() +
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
