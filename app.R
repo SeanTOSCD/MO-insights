@@ -225,7 +225,7 @@ ui <- fluidPage(
             conditionalPanel(
               condition = "input.tabset_plots == 'tab_11'",
               selectInput("injury_type_plot11", "Select Injury Type:",
-                          choices = c("All", "NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
+                          choices = c("NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
             ),
            )
     ),
@@ -361,10 +361,10 @@ ui <- fluidPage(
                                 plotOutput("plot10")
                        ),
                        # Plot 11 output
-                       tabPanel("Age Distribution by Injury Severity", 
+                       tabPanel("Frequency of Age by Injury Severity", 
                                 value = "tab_11",
-                                h3("Age Distribution by Injury Severity"),
-                                p("Bar plot showing the distribution of ages based on injury severity"),
+                                h3("Frequency of Age by Injury Severity"),
+                                p("Bar plot showing the frequency of ages across injury severity."),
                                 plotOutput("plot11")
                        ),
            )
@@ -507,7 +507,7 @@ server <- function(input, output, session) {
         y = "Number of Crashes",
         fill = "Injury Type"
       ) +
-      scale_x_continuous(breaks = 0:24) +  # Show all hours
+      scale_x_continuous(breaks = 0:24) +
       theme_minimal()
   })
   
@@ -640,7 +640,7 @@ server <- function(input, output, session) {
     return(filtered_data)
   })
   
-  # Plot 6 output (Stacked Bar Chart)
+  # Plot 6 output
   output$plot6 <- renderPlot({
     reactive_plot6_data() %>%
       ggplot(aes(x = reorder(County, total_crashes), y = crash_count, fill = Injury)) +
@@ -749,8 +749,13 @@ server <- function(input, output, session) {
     reactive_plot11_data() %>%
       ggplot(aes(x = Age)) + 
       geom_bar(fill = "steelblue") +
+      scale_x_continuous(
+        breaks = seq(min(reactive_plot11_data()$Age, na.rm = TRUE), 
+                     max(reactive_plot11_data()$Age, na.rm = TRUE), 
+                     by = 2)  # Ensure breaks are every 1 unit
+      ) +
       labs(
-        title = "Age Distribution by Injury Severity",
+        title = "Frequency of Age by Injury Severity",
         x = "Age",
         y = "Count"
       ) +
