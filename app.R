@@ -3,6 +3,9 @@ library(tidyverse)
 #install.packages("DT")
 library(DT)
 
+library(ggplot2)
+library(dplyr)
+
 #####
 # === Collect and prepare data
 # Stacking CSV files. The first sets column standards, the rest follow.
@@ -36,7 +39,14 @@ crash_data <- bind_rows(
 
 # Step 2 of 2: Now convert certain columns to other data types with special considerations
 crash_data <- crash_data %>%
+  
+  #group_by(Date, Time, Troop) %>%
+  #summarize(Count = n(), .groups = 'drop')  %>%
+  
   mutate(
+    
+    #Hour = as.numeric(format(strptime(Time, "%H:%M:%S"), "%H")),
+    #Month = format(Date, "%Y-%m"),  # Formats to "YYYY-MM"
     
     # Made Age a number
     Age = as.numeric(Age),
@@ -49,6 +59,12 @@ crash_data <- crash_data %>%
     
     # Made a new column with Date and Time combined (so a full timestamp)
     DateTime = as.POSIXct(paste(Date, Time), format = "%Y-%m-%d %H:%M:%S"),
+    
+    # Extract hour from DateTime
+    Hour = as.integer(format(DateTime, "%H")),
+    
+    # Create readable hour labels
+    HourLabel = format(DateTime, "%I %p"),
     
     # Remove extra space from city & state
     CityState = str_trim(CityState),
@@ -172,7 +188,34 @@ ui <- fluidPage(
                checkboxGroupInput("county_injury_filter", "Select Injury Types:",
                                   choices = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"),
                                   selected = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"))
-             )
+             ),
+            
+            # Plot 7 controls
+            conditionalPanel(
+              condition = "input.tabset_plots == 'tab_7'",
+              sliderInput("top_n_counties", "Number of Counties to Display:",
+                          min = 5, max = 20, value = 10, step = 1),
+              checkboxGroupInput("county_injury_filter", "Select Injury Types:",
+                                 choices = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"),
+                                 selected = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"))
+            ),
+            
+            # Plot 8 controls
+            conditionalPanel(
+              condition = "input.tabset_plots == 'tab_8'",
+              selectInput("safety_device", "Select Safety Device:",
+                          choices = c("All", "TRUE", "FALSE"))
+            ),
+            
+            # Plot 9 controls
+            conditionalPanel(
+              condition = "input.tabset_plots == 'tab_9'",
+              sliderInput("top_n_counties", "Number of Counties to Display:",
+                          min = 5, max = 20, value = 10, step = 1),
+              checkboxGroupInput("county_injury_filter", "Select Injury Types:",
+                                 choices = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"),
+                                 selected = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"))
+            )
            )
     ),
     
@@ -284,12 +327,14 @@ ui <- fluidPage(
                        # Plot 7 output
                        tabPanel("Plot 7", 
                                 value = "tab_7",
-                                h3("Plot 7!")
+                                h3("Crash Data Bubble Chart (Count of Troop)"),
+                                plotOutput("plot7"),
                        ),
                        # Plot 8 output
-                       tabPanel("Plot 8", 
+                       tabPanel("Count by Time of Day", 
                                 value = "tab_8",
-                                h3("Plot 8!")
+                                h3("Count by Time of Day"),
+                                plotOutput("plot8")
                        ),
                        # Plot 9 output
                        tabPanel("Plot 9", 
@@ -504,7 +549,6 @@ server <- function(input, output, session) {
   })
   
   # Plot 5 output
-  # Plot 5 output
   output$plot5 <- renderPlot({
     plot_data <- reactive_plot5_data()
     
@@ -588,6 +632,35 @@ server <- function(input, output, session) {
         fill = "Injury Type"
       ) +
       theme_minimal()
+  })
+  
+  # Plot 7 output - Create the updated plot “Crash Data Bubble Chart (Count of Troop)”
+  
+  
+  # Reactive data for plot 8
+  reactive_plot8_data <- reactive({
+    data <- reactive_crash_data()
+    if (input$safety_device != "All") {
+      data <- data %>% filter(SafetyDevice == as.logical(input$safety_device))
+    }
+    data %>%
+      group_by(Hour, HourLabel, SafetyDevice) %>%
+      summarise(Count = n(), .groups = 'drop')
+  })
+  
+  # Plot 8 output
+  output$plot8 <- renderPlot({
+    reactive_plot8_data() %>%
+      ggplot(aes(x = HourLabel, y = Count, fill = SafetyDevice)) +
+      geom_bar(stat = "identity", position = "dodge") +
+      labs(
+        title = "Time of Day vs. Safety Device",
+        x = "Time of Day",
+        y = "Count",
+        fill = "Safety Device"
+      ) +
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
   })
   
 }
