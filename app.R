@@ -192,7 +192,7 @@ ui <- fluidPage(
             
             # Plot 7 controls
             conditionalPanel(
-              condition = "input.tabset_plots == 'tab_6'",
+              condition = "input.tabset_plots == 'tab_7'",
               sliderInput("top_n_counties", "Number of Counties to Display:",
                           min = 5, max = 20, value = 10, step = 1),
               checkboxGroupInput("county_injury_filter", "Select Injury Types:",
@@ -202,14 +202,14 @@ ui <- fluidPage(
             
             # Plot 8 controls
             conditionalPanel(
-              condition = "input.tabset_plots == 'tab_2'",
+              condition = "input.tabset_plots == 'tab_8'",
               selectInput("safety_device", "Select Safety Device:",
                           choices = c("All", "TRUE", "FALSE"))
             ),
             
             # Plot 9 controls
             conditionalPanel(
-              condition = "input.tabset_plots == 'tab_6'",
+              condition = "input.tabset_plots == 'tab_9'",
               sliderInput("top_n_counties", "Number of Counties to Display:",
                           min = 5, max = 20, value = 10, step = 1),
               checkboxGroupInput("county_injury_filter", "Select Injury Types:",
@@ -650,7 +650,7 @@ server <- function(input, output, session) {
   
   # Plot 8 output
   output$plot8 <- renderPlot({
-    reactive_plot2_data() %>%
+    reactive_plot8_data() %>%
       ggplot(aes(x = HourLabel, y = Count, fill = SafetyDevice)) +
       geom_bar(stat = "identity", position = "dodge") +
       labs(
