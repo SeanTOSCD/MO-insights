@@ -40,13 +40,13 @@ crash_data <- bind_rows(
 # Step 2 of 2: Now convert certain columns to other data types with special considerations
 crash_data <- crash_data %>%
   
-  group_by(Date, Time, Troop) %>%
-  summarize(Count = n(), .groups = 'drop')  %>%
+  #group_by(Date, Time, Troop) %>%
+  #summarize(Count = n(), .groups = 'drop')  %>%
   
   mutate(
     
-    Hour = as.numeric(format(strptime(Time, "%H:%M:%S"), "%H")),
-    Month = format(Date, "%Y-%m"),  # Formats to "YYYY-MM"
+    #Hour = as.numeric(format(strptime(Time, "%H:%M:%S"), "%H")),
+    #Month = format(Date, "%Y-%m"),  # Formats to "YYYY-MM"
     
     # Made Age a number
     Age = as.numeric(Age),
