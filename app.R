@@ -60,6 +60,12 @@ crash_data <- crash_data %>%
     # Made a new column with Date and Time combined (so a full timestamp)
     DateTime = as.POSIXct(paste(Date, Time), format = "%Y-%m-%d %H:%M:%S"),
     
+    # Extract hour from DateTime
+    Hour = as.integer(format(DateTime, "%H")),
+    
+    # Create readable hour labels
+    HourLabel = format(DateTime, "%I %p"),
+    
     # Remove extra space from city & state
     CityState = str_trim(CityState),
     
@@ -182,7 +188,34 @@ ui <- fluidPage(
                checkboxGroupInput("county_injury_filter", "Select Injury Types:",
                                   choices = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"),
                                   selected = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"))
-             )
+             ),
+            
+            # Plot 7 controls
+            conditionalPanel(
+              condition = "input.tabset_plots == 'tab_6'",
+              sliderInput("top_n_counties", "Number of Counties to Display:",
+                          min = 5, max = 20, value = 10, step = 1),
+              checkboxGroupInput("county_injury_filter", "Select Injury Types:",
+                                 choices = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"),
+                                 selected = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"))
+            ),
+            
+            # Plot 8 controls
+            conditionalPanel(
+              condition = "input.tabset_plots == 'tab_2'",
+              selectInput("safety_device", "Select Safety Device:",
+                          choices = c("All", "TRUE", "FALSE"))
+            ),
+            
+            # Plot 9 controls
+            conditionalPanel(
+              condition = "input.tabset_plots == 'tab_6'",
+              sliderInput("top_n_counties", "Number of Counties to Display:",
+                          min = 5, max = 20, value = 10, step = 1),
+              checkboxGroupInput("county_injury_filter", "Select Injury Types:",
+                                 choices = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"),
+                                 selected = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"))
+            )
            )
     ),
     
@@ -298,9 +331,10 @@ ui <- fluidPage(
                                 plotOutput("plot7"),
                        ),
                        # Plot 8 output
-                       tabPanel("Plot 8", 
+                       tabPanel("Count by Time of Day", 
                                 value = "tab_8",
-                                h3("Plot 8!")
+                                h3("Count by Time of Day"),
+                                plotOutput("plot8")
                        ),
                        # Plot 9 output
                        tabPanel("Plot 9", 
@@ -601,19 +635,33 @@ server <- function(input, output, session) {
   })
   
   # Plot 7 output - Create the updated plot “Crash Data Bubble Chart (Count of Troop)”
-  ggplot(crash_data_troop, aes(x = Month, y = Hour, size = Count, color = Troop)) +
-    geom_point(alpha = 0.6) +
-    scale_size_continuous(name = "Count of Troop", range = c(3, 15)) +
-    labs(
-      title = "Crash Data Bubble Chart (Count of Troop)",
-      x = "Month",
-      y = "Hour of the Day"
-    ) +
-    theme_minimal() +
-    theme(
-      legend.position = "right",
-      axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
-    )
+  
+  
+  # Reactive data for plot 8
+  reactive_plot8_data <- reactive({
+    data <- reactive_crash_data()
+    if (input$safety_device != "All") {
+      data <- data %>% filter(SafetyDevice == as.logical(input$safety_device))
+    }
+    data %>%
+      group_by(Hour, HourLabel, SafetyDevice) %>%
+      summarise(Count = n(), .groups = 'drop')
+  })
+  
+  # Plot 8 output
+  output$plot8 <- renderPlot({
+    reactive_plot2_data() %>%
+      ggplot(aes(x = HourLabel, y = Count, fill = SafetyDevice)) +
+      geom_bar(stat = "identity", position = "dodge") +
+      labs(
+        title = "Time of Day vs. Safety Device",
+        x = "Time of Day",
+        y = "Count",
+        fill = "Safety Device"
+      ) +
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  })
   
 }
 
