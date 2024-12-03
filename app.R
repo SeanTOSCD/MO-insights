@@ -39,14 +39,7 @@ crash_data <- bind_rows(
 
 # Step 2 of 2: Now convert certain columns to other data types with special considerations
 crash_data <- crash_data %>%
-  
-  #group_by(Date, Time, Troop) %>%
-  #summarize(Count = n(), .groups = 'drop')  %>%
-  
   mutate(
-    
-    #Hour = as.numeric(format(strptime(Time, "%H:%M:%S"), "%H")),
-    #Month = format(Date, "%Y-%m"),  # Formats to "YYYY-MM"
     
     # Made Age a number
     Age = as.numeric(Age),
@@ -171,6 +164,8 @@ ui <- fluidPage(
                sliderInput("time_range_plot3", "Select Time Range (Hours):", 
                            min = 0, max = 24, value = c(0, 24), step = 1)
              ),
+            
+             # Plot 4 controls (NONE)
              
              # Plot 5 controls
              conditionalPanel(
@@ -190,15 +185,7 @@ ui <- fluidPage(
                                   selected = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"))
              ),
             
-            # Plot 7 controls
-            conditionalPanel(
-              condition = "input.tabset_plots == 'tab_7'",
-              sliderInput("top_n_counties", "Number of Counties to Display:",
-                          min = 5, max = 20, value = 10, step = 1),
-              checkboxGroupInput("county_injury_filter", "Select Injury Types:",
-                                 choices = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"),
-                                 selected = c("MINOR", "MODERATE", "SERIOUS", "FATAL", "NO INJURY"))
-            ),
+            # Plot 7 controls (NONE)
             
             # Plot 8 controls
             conditionalPanel(
@@ -336,7 +323,7 @@ ui <- fluidPage(
                        ),
                        
                        # Plot 7 output
-                       tabPanel("Plot 7", 
+                       tabPanel("Bubble Chart: Count by Troop", 
                                 value = "tab_7",
                                 h3("Crash Data Bubble Chart (Count of Troop)"),
                                 plotOutput("plot7"),
@@ -655,8 +642,43 @@ server <- function(input, output, session) {
       theme_minimal()
   })
   
-  # Plot 7 output - Create the updated plot “Crash Data Bubble Chart (Count of Troop)”
+  # Reactive data for plot 7
+  reactive_plot7_data <- reactive({
+    crash_data <- reactive_crash_data() 
+    crash_data %>%
+      group_by(Date, Time, Troop) %>%
+      summarize(Count = n(), .groups = 'drop') %>%
+      mutate(
+        Hour = as.numeric(format(strptime(Time, "%H:%M:%S"), "%H")),
+        Month = format(Date, "%Y-%m")  # Formats to "YYYY-MM"
+      )
+  })
   
+  # Plot 7 output
+  output$plot7 <- renderPlot({
+    reactive_plot7_data() %>%
+      ggplot(aes(x = Month, y = Hour, size = Count, color = Troop)) +
+      geom_point(alpha = 0.6) +
+      scale_size_continuous(name = "Count of Troop", range = c(3, 15)) +
+      scale_y_continuous(
+        breaks = seq(0, 24, by = 2),
+        limits = c(0, 24),
+        expand = c(0, 0)
+      ) +
+      labs(
+        title = "Crash Data Bubble Chart (Count of Troop)",
+        x = "Month",
+        y = "Hour of the Day"
+      ) +
+      theme_minimal() +
+      theme(
+        legend.position = "right",
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5),
+        axis.title.y = element_text(vjust = 1.5),
+        axis.title.x = element_text(vjust = -0.5)
+      )
+  }, height = 650)
   
   # Reactive data for plot 8
   reactive_plot8_data <- reactive({
