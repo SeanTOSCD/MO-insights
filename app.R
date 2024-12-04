@@ -154,44 +154,44 @@ ui <- fluidPage(
         start = "2023-12-01",
         end = "2024-11-30"),
              
-      # Plot 1 controls
+      # age_injury_plot controls
       conditionalPanel(
-        condition = "input.tabset_plots == 'tab_1'",
-        selectInput("injury_type_plot1", "Select Injury Type:",
+        condition = "input.tabset_plots == 'age_injury_plot_tab'",
+        selectInput("age_injury_plot", "Select Injury Type:",
                     choices = c("All", "NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
       ),
       
-      # Plot 2 controls
+      # seasonal_injury_plot controls
       conditionalPanel(
-        condition = "input.tabset_plots == 'tab_2'",
-        checkboxGroupInput("injury_filter_plot2", "Select Injury Types:", 
+        condition = "input.tabset_plots == 'seasonal_injury_plot_tab'",
+        checkboxGroupInput("seasonal_injury_plot", "Select Injury Types:", 
                           choices = c("NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"),
                           selected = c("NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL")),
-        radioButtons("metric_plot2", "Display:", 
+        radioButtons("metric_seasonal_injury_plot", "Display:", 
                     choices = c("Count" = "count", "Percentage" = "percent"),
                     selected = "count")
       ),
       
-      # Plot 3 controls
+      # hourly_injury_plot controls
       conditionalPanel(
-        condition = "input.tabset_plots == 'tab_3'",
-        sliderInput("time_range_plot3", "Select Time Range (Hours):",
+        condition = "input.tabset_plots == 'hourly_injury_plot_tab'",
+        sliderInput("time_range_hourly_injury_plot", "Select Time Range (Hours):",
                     min = 0, max = 24, value = c(0, 24), step = 1)
       ),
       
-      # Plot 4 controls (NONE)
+      # day_hour_heatmap controls (NONE)
       
-      # Plot 5 controls
+      # crash_trend_plot controls
       conditionalPanel(
-        condition = "input.tabset_plots == 'tab_5'",
+        condition = "input.tabset_plots == 'crash_trend_plot_tab'",
         radioButtons("aggregation_level", "Select Time Interval:",
                     choices = c("Daily" = "day", "Weekly" = "week", "Monthly" = "month"),
                     selected = "week")
       ),
       
-      # Plot 6 controls
+      # county_crash_plot controls
       conditionalPanel(
-        condition = "input.tabset_plots == 'tab_6'",
+        condition = "input.tabset_plots == 'county_crash_plot_tab'",
         sliderInput("top_n_counties", "Number of Counties to Display:",
                     min = 5, max = 20, value = 10, step = 1),
         checkboxGroupInput("county_injury_filter", "Select Injury Types:",
@@ -199,40 +199,40 @@ ui <- fluidPage(
                            selected = c("NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
       ),
             
-      # Plot 7 controls (NONE)
+      # month_hour_bubble controls (NONE)
 
-      # Plot 7_0 controls
+      # injury_bubble_chart controls
       conditionalPanel(
-        condition = "input.tabset_plots == 'tab_7_0'",
-        selectInput("injury_type_plot7_0", "Select Injury Type:",
+        condition = "input.tabset_plots == 'injury_bubble_chart_tab'",
+        selectInput("injury_bubble_chart", "Select Injury Type:",
                     choices = c("All", "NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
       ),
       
-      # Plot 8 controls
+      # time_of_day_crash_plot controls
       conditionalPanel(
-        condition = "input.tabset_plots == 'tab_8'",
+        condition = "input.tabset_plots == 'time_of_day_crash_plot_tab'",
         selectInput("safety_device", "Select Safety Device:",
                     choices = c("All", "TRUE", "FALSE"))
       ),
       
-      # Plot 9 controls
+      # severity_time_plot controls
       conditionalPanel(
-        condition = "input.tabset_plots == 'tab_9'",
+        condition = "input.tabset_plots == 'severity_time_plot_tab'",
         selectInput("injury_severity", "Select Injury Severity:",
                     choices = c("All", "NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
       ),
       
-      # Plot 10 controls
+      # safety_device_plot controls
       conditionalPanel(
-        condition = "input.tabset_plots == 'tab_10'",
-        selectInput("injury_type_plot10", "Select Injury Type:",
+        condition = "input.tabset_plots == 'safety_device_plot_tab'",
+        selectInput("safety_device_plot", "Select Injury Type:",
                     choices = c("All", "NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
       ),
       
-      # Plot 11 controls
+      # age_frequency_plot controls
       conditionalPanel(
-        condition = "input.tabset_plots == 'tab_11'",
-        selectInput("injury_type_plot11", "Select Injury Type:",
+        condition = "input.tabset_plots == 'age_frequency_plot_tab'",
+        selectInput("age_frequency_plot", "Select Injury Type:",
                     choices = c("NO INJURY", "MINOR", "MODERATE", "SERIOUS", "FATAL"))
       ),
     ),
@@ -251,9 +251,9 @@ ui <- fluidPage(
           DTOutput("crash_data_table")
         ),
         
-        # Plot 1 output
+        # age_injury_plot output
         tabPanel("Age Distribution by Injury", 
-          value = "tab_1",
+          value = "age_injury_plot_tab",
           h3("Age Distribution by Injury Type"),
           p("This chart visualizes the age distribution of individuals involved in traffic crashes, grouped by injury severity."),
           tags$ul(
@@ -262,12 +262,12 @@ ui <- fluidPage(
             tags$li("This visualization helps identify which age groups are most affected by different levels of crash severity.")
           ),
           hr(),
-          plotOutput("plot1"),
+          plotOutput("age_injury_plot"),
         ),
         
-        # Plot 2 output
+        # seasonal_injury_plot output
         tabPanel("Seasonal Injury Types", 
-          value = "tab_2",
+          value = "seasonal_injury_plot_tab",
           h3("Crashes by Season and Injury Type"),
           p("This chart shows the distribution of traffic crashes across seasons, broken down by injury severity."),
           tags$ul(
@@ -276,12 +276,12 @@ ui <- fluidPage(
             tags$li("Switch between counts and percentages using the radio buttons to analyze proportions.")
           ),
           hr(),
-          plotOutput("plot2"),
+          plotOutput("seasonal_injury_plot"),
         ),
 
-        # Plot 3 output
+        # hourly_injury_plot output
         tabPanel("Injuries by the Hour", 
-          value = "tab_3",
+          value = "hourly_injury_plot_tab",
           h3("Crashes by Time of Day"),
           p("This chart illustrates the distribution of traffic crashes throughout the day, grouped by injury severity."),
           tags$ul(
@@ -290,12 +290,12 @@ ui <- fluidPage(
             tags$li("This visualization helps identify high-risk times of the day for different levels of crash severity.")
           ),
           hr(),
-          plotOutput("plot3"),
+          plotOutput("hourly_injury_plot"),
         ),
         
-        # Plot 4 output
+        # day_hour_heatmap output
         tabPanel("Crash Day/Hour Heatmap", 
-          value = "tab_4",
+          value = "day_hour_heatmap_tab",
           h3("Heatmap of Crashes by Day of Week and Hour"),
           p("This heatmap visualizes the distribution of traffic crashes by day of the week and time of day."),
           tags$ul(
@@ -304,12 +304,12 @@ ui <- fluidPage(
             tags$li("This visualization helps identify patterns in crash occurrences by time and day.")
           ),
           hr(),
-          plotOutput("plot4"),
+          plotOutput("day_hour_heatmap"),
         ),
         
-        # Plot 5 output
+        # crash_trend_plot output
         tabPanel("Crashes Over Time", 
-          value = "tab_5",
+          value = "crash_trend_plot_tab",
           h3("Traffic Crashes Over Time"),
           p("This line chart displays the trend of traffic crashes over time, based on the selected date range."),
           tags$ul(
@@ -318,12 +318,12 @@ ui <- fluidPage(
             tags$li("This visualization helps identify trends or seasonal patterns in crash occurrences.")
           ),
           hr(),
-          plotOutput("plot5"),
+          plotOutput("crash_trend_plot"),
         ),
         
-        # Plot 6 output
+        # county_crash_plot output
         tabPanel("Crashes by County", 
-          value = "tab_6",
+          value = "county_crash_plot_tab",
           h3("Top Counties by Crash Count"),
           p("This bar chart highlights the counties with the highest number of crashes, grouped by injury severity."),
           tags$ul(
@@ -332,12 +332,12 @@ ui <- fluidPage(
             tags$li("Filter the injury types displayed using the checkboxes to focus on specific crash severities.")
           ),
           hr(),
-          plotOutput("plot6"),
+          plotOutput("county_crash_plot"),
         ),
 
-        # Plot 7 output
+        # month_hour_bubble output
         tabPanel("Crashes Month/Hour Bubble Chart", 
-          value = "tab_7",
+          value = "month_hour_bubble_tab",
           h3("Crashes by Month and Hour"),
           p("This bubble chart shows the distribution of traffic crashes by month and hour of the day. Bubble size represents the number of crashes, and colors represent different troops."),
           tags$ul(
@@ -347,12 +347,12 @@ ui <- fluidPage(
             tags$li("Use the troop selection filter to focus on specific regions.")
           ),
           hr(),
-          plotOutput("plot7"),
+          plotOutput("month_hour_bubble"),
         ),
 
-        # Plot 7_0 output
+        # injury_bubble_chart output
         tabPanel("Injuries Month/Hour Bubble Chart", 
-          value = "tab_7_0",
+          value = "injury_bubble_chart_tab",
           h3("Injuries by Month and Hour"),
           p("This bubble chart illustrates the distribution of injuries from traffic crashes by month and hour. Bubble size represents the number of injuries, and colors represent injury severity."),
           tags$ul(
@@ -362,12 +362,12 @@ ui <- fluidPage(
             tags$li("Colors distinguish between levels of injury severity.")
           ),
           hr(),
-          plotOutput("plot7_0"),
+          plotOutput("injury_bubble_chart"),
         ), 
         
-        # Plot 8 output
+        # time_of_day_crash_plot output
         tabPanel("Count by Time of Day",
-          value = "tab_8",
+          value = "time_of_day_crash_plot_tab",
           h3("Crash Counts by Time of Day"),        
           p("This bar chart shows the number of traffic crashes at different times of the day, grouped by safety device usage."),
           tags$ul(
@@ -376,12 +376,12 @@ ui <- fluidPage(
             tags$li("Colors differentiate between crashes involving safety device use and those without.")
           ),
           hr(),
-          plotOutput("plot8"),
+          plotOutput("time_of_day_crash_plot"),
         ),
         
-        # Plot 9 output
+        # severity_time_plot output
         tabPanel("Severity by Time of Day", 
-          value = "tab_9",
+          value = "severity_time_plot_tab",
           h3("Injury Severity by Time of Day"),
           p("This bar chart displays the number of traffic crashes at different times of the day, categorized by injury severity."),
           tags$ul(
@@ -390,12 +390,12 @@ ui <- fluidPage(
             tags$li("Colors represent different levels of injury severity.")
           ),
           hr(),
-          plotOutput("plot9"),
+          plotOutput("severity_time_plot"),
         ),
         
-        # Plot 10 output
+        # safety_device_plot output
         tabPanel("Safety Device Usage", 
-          value = "tab_10",
+          value = "safety_device_plot_tab",
           h3("Safety Device Usage by Injury Type"),
           p("This bar chart illustrates the usage of safety devices during crashes, categorized by injury severity."),
           tags$ul(
@@ -404,12 +404,12 @@ ui <- fluidPage(
             tags$li("Use the injury type filter to explore specific categories.")
           ),
           hr(),
-          plotOutput("plot10"),
+          plotOutput("safety_device_plot"),
         ),
         
-        # Plot 11 output
+        # age_frequency_plot output
         tabPanel("Frequency of Age by Injury Severity", 
-          value = "tab_11",
+          value = "age_frequency_plot_tab",
           h3("Frequency of Age by Injury Severity"),
           p("This bar chart shows the frequency of different ages involved in traffic crashes, categorized by injury severity."),
           tags$ul(
@@ -418,7 +418,7 @@ ui <- fluidPage(
             tags$li("Use the injury severity filter to analyze specific categories.")
           ),
           hr(),
-          plotOutput("plot11"),
+          plotOutput("age_frequency_plot"),
         ),
       )
     )
@@ -459,11 +459,11 @@ server <- function(input, output, session) {
 
   # ========== Begin custom plots
   
-  # Reactive data for Plot 1
-  reactive_plot1_data <- reactive({
+  # Reactive data for age_injury_plot
+  reactive_age_injury_plot_data <- reactive({
     data <- reactive_crash_data()
-    if (input$injury_type_plot1 != "All") {
-      data <- data %>% filter(Injury == input$injury_type_plot1)
+    if (input$age_injury_plot != "All") {
+      data <- data %>% filter(Injury == input$age_injury_plot)
     }
     
     # Bin ages into groups
@@ -480,9 +480,9 @@ server <- function(input, output, session) {
     return(data)
   })
   
-  # Plot 1 output
-  output$plot1 <- renderPlot({
-    reactive_plot1_data() %>%
+  # age_injury_plot output
+  output$age_injury_plot <- renderPlot({
+    reactive_age_injury_plot_data() %>%
       ggplot(aes(x = AgeGroup, fill = Injury)) +
       geom_bar(position = "dodge", color = "white") +
       facet_wrap(~Injury, scales = "free_y") +
@@ -496,13 +496,13 @@ server <- function(input, output, session) {
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
   })
   
-  # Reactive data for Plot 2
-  reactive_plot2_data <- reactive({
+  # Reactive data for seasonal_injury_plot
+  reactive_seasonal_injury_plot_data <- reactive({
     data <- reactive_crash_data()
     
     # Filter by selected injury types
-    if (!is.null(input$injury_filter_plot2)) {
-      data <- data %>% filter(Injury %in% input$injury_filter_plot2)
+    if (!is.null(input$seasonal_injury_plot)) {
+      data <- data %>% filter(Injury %in% input$seasonal_injury_plot)
     }
     
     # Group data by Season and Injury
@@ -512,7 +512,7 @@ server <- function(input, output, session) {
       mutate(Season = factor(Season, levels = c("Winter", "Spring", "Summer", "Fall")))
     
     # Adjust for percentage if selected
-    if (input$metric_plot2 == "percent") {
+    if (input$metric_seasonal_injury_plot == "percent") {
       data <- data %>%
         group_by(Season) %>%
         mutate(crash_count = crash_count / sum(crash_count) * 100)
@@ -521,10 +521,10 @@ server <- function(input, output, session) {
     return(data)
   })
   
-  # Plot 2 output
-  output$plot2 <- renderPlot({
-    plot_data <- reactive_plot2_data()
-    y_label <- ifelse(input$metric_plot2 == "count", "Number of Crashes", "Percentage of Crashes")
+  # seasonal_injury_plot output
+  output$seasonal_injury_plot <- renderPlot({
+    plot_data <- reactive_seasonal_injury_plot_data()
+    y_label <- ifelse(input$metric_seasonal_injury_plot == "count", "Number of Crashes", "Percentage of Crashes")
     plot_data %>%
       ggplot(aes(x = Season, y = crash_count, fill = Injury)) +
       geom_bar(stat = "identity", position = "dodge", color = "white") +
@@ -537,8 +537,8 @@ server <- function(input, output, session) {
       theme_minimal()
   })
   
-  # Reactive data for plot 3
-  reactive_plot3_data <- reactive({
+  # Reactive data for hourly_injury_plot
+  reactive_hourly_injury_plot_data <- reactive({
     data <- reactive_crash_data()  # Use globally filtered data
     
     # Get the hour from DateTime
@@ -547,14 +547,14 @@ server <- function(input, output, session) {
     
     # Filter by the selected time range
     data <- data %>%
-      filter(Hour >= input$time_range_plot3[1], Hour <= input$time_range_plot3[2])
+      filter(Hour >= input$time_range_hourly_injury_plot[1], Hour <= input$time_range_hourly_injury_plot[2])
     
     return(data)
   })
   
-  # Plot 3 output
-  output$plot3 <- renderPlot({
-    reactive_plot3_data() %>%
+  # hourly_injury_plot output
+  output$hourly_injury_plot <- renderPlot({
+    reactive_hourly_injury_plot_data() %>%
       ggplot(aes(x = Hour, fill = Injury)) +
       geom_histogram(binwidth = 1, position = "dodge", color = "white") +
       labs(
@@ -567,8 +567,8 @@ server <- function(input, output, session) {
       theme_minimal()
   })
   
-  # Reactive data for plot 4
-  reactive_plot4_data <- reactive({
+  # Reactive data for day_hour_heatmap
+  reactive_day_hour_heatmap_data <- reactive({
     data <- reactive_crash_data()  # Use globally filtered data
     
     # Extract day of the week and hour
@@ -583,9 +583,9 @@ server <- function(input, output, session) {
     return(data)
   })
   
-  # Plot 4 output
-  output$plot4 <- renderPlot({
-    reactive_plot4_data() %>%
+  # day_hour_heatmap output
+  output$day_hour_heatmap <- renderPlot({
+    reactive_day_hour_heatmap_data() %>%
       ggplot(aes(x = Hour, y = fct_reorder(DayOfWeek, -match(DayOfWeek, c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"))), 
                  fill = crash_count)) +
       geom_tile(color = "white") +
@@ -602,8 +602,8 @@ server <- function(input, output, session) {
       )
   })
   
-  # Reactive data for plot 5
-  reactive_plot5_data <- reactive({
+  # Reactive data for crash_trend_plot
+  reactive_crash_trend_plot_data <- reactive({
     data <- reactive_crash_data()
     
     aggregation_level <- input$aggregation_level
@@ -625,9 +625,9 @@ server <- function(input, output, session) {
     return(data)
   })
   
-  # Plot 5 output
-  output$plot5 <- renderPlot({
-    plot_data <- reactive_plot5_data()
+  # crash_trend_plot output
+  output$crash_trend_plot <- renderPlot({
+    plot_data <- reactive_crash_trend_plot_data()
     
     # Determine the x-axis label based on the aggregation level
     x_label <- switch(input$aggregation_level,
@@ -662,8 +662,8 @@ server <- function(input, output, session) {
       )
   })
   
-  # Reactive data for plot 6
-  reactive_plot6_data <- reactive({
+  # Reactive data for county_crash_plot
+  reactive_county_crash_plot_data <- reactive({
     data <- reactive_crash_data()
     
     # Filter by selected injury types
@@ -696,9 +696,9 @@ server <- function(input, output, session) {
     return(filtered_data)
   })
   
-  # Plot 6 output
-  output$plot6 <- renderPlot({
-    reactive_plot6_data() %>%
+  # county_crash_plot output
+  output$county_crash_plot <- renderPlot({
+    reactive_county_crash_plot_data() %>%
       ggplot(aes(x = reorder(County, total_crashes), y = crash_count, fill = Injury)) +
       geom_bar(stat = "identity", color = "white") +
       coord_flip() +
@@ -711,8 +711,8 @@ server <- function(input, output, session) {
       theme_minimal()
   })
   
-  # Reactive data for plot 7
-  reactive_plot7_data <- reactive({
+  # Reactive data for month_hour_bubble
+  reactive_month_hour_bubble_data <- reactive({
     crash_data <- reactive_crash_data() 
     crash_data %>%
       group_by(Date, Time, Troop) %>%
@@ -723,9 +723,9 @@ server <- function(input, output, session) {
       )
   })
   
-  # Plot 7 output
-  output$plot7 <- renderPlot({
-    reactive_plot7_data() %>%
+  # month_hour_bubble output
+  output$month_hour_bubble <- renderPlot({
+    reactive_month_hour_bubble_data() %>%
       ggplot(aes(x = Month, y = Hour, size = Count, color = Troop)) +
       geom_point(alpha = 0.6) +
       scale_size_continuous(name = "Count of Troop", range = c(3, 15)) +
@@ -749,13 +749,13 @@ server <- function(input, output, session) {
       )
   }, height = 650)
 
-  # Reactive data for plot 7_0
-  reactive_plot7_0_data <- reactive({
+  # Reactive data for injury_bubble_chart
+  reactive_injury_bubble_chart_data <- reactive({
     crash_data <- reactive_crash_data() 
     
-    # Ensure input$injury_type_plot7_0 exists and filter by Injury type
-    if (input$injury_type_plot7_0 != "All") {
-      crash_data <- crash_data %>% filter(Injury == input$injury_type_plot7_0)
+    # Ensure input$injury_bubble_chart exists and filter by Injury type
+    if (input$injury_bubble_chart != "All") {
+      crash_data <- crash_data %>% filter(Injury == input$injury_bubble_chart)
     }
     
     # Process the data
@@ -768,10 +768,10 @@ server <- function(input, output, session) {
       )
   })
   
-  # Plot 7_0 output
-  output$plot7_0 <- renderPlot({
+  # injury_bubble_chart output
+  output$injury_bubble_chart <- renderPlot({
     # Access the reactive data
-    plot_data <- reactive_plot7_0_data()
+    plot_data <- reactive_injury_bubble_chart_data()
     
     # Generate the plot
     ggplot(plot_data, aes(x = Month, y = Hour, size = Count, color = Injury)) +
@@ -796,8 +796,8 @@ server <- function(input, output, session) {
       )
   }, height = 650)
   
-  # Reactive data for plot 8
-  reactive_plot8_data <- reactive({
+  # Reactive data for time_of_day_crash_plot
+  reactive_time_of_day_crash_plot_data <- reactive({
     data <- reactive_crash_data()
     if (input$safety_device != "All") {
       data <- data %>% filter(SafetyDevice == as.logical(input$safety_device))
@@ -807,9 +807,9 @@ server <- function(input, output, session) {
       summarise(Count = n(), .groups = 'drop')
   })
   
-  # Plot 8 output
-  output$plot8 <- renderPlot({
-    reactive_plot8_data() %>%
+  # time_of_day_crash_plot output
+  output$time_of_day_crash_plot <- renderPlot({
+    reactive_time_of_day_crash_plot_data() %>%
       ggplot(aes(x = HourLabel, y = Count, fill = SafetyDevice)) +
       geom_bar(stat = "identity", position = "dodge") +
       labs(
@@ -822,8 +822,8 @@ server <- function(input, output, session) {
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
   })
   
-  # Reactive data for plot 9
-  reactive_plot9_data <- reactive({
+  # Reactive data for severity_time_plot
+  reactive_severity_time_plot_data <- reactive({
     data <- reactive_crash_data()
     if (input$injury_severity != "All") {
       data <- data %>% filter(Injury == input$injury_severity)
@@ -833,9 +833,9 @@ server <- function(input, output, session) {
       summarise(Count = n(), .groups = 'drop')
   })
   
-  # Plot 9 output
-  output$plot9 <- renderPlot({
-    reactive_plot9_data() %>%
+  # severity_time_plot output
+  output$severity_time_plot <- renderPlot({
+    reactive_severity_time_plot_data() %>%
       ggplot(aes(x = HourLabel, y = Count, fill = Injury)) +
       geom_bar(stat = "identity", position = "dodge") +
       labs(
@@ -848,19 +848,19 @@ server <- function(input, output, session) {
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
   })
   
-  # Reactive data for plot 10
-  reactive_plot10_data <- reactive({
+  # Reactive data for safety_device_plot
+  reactive_safety_device_plot_data <- reactive({
     data <- reactive_crash_data() 
-    if (input$injury_type_plot10 != "All") {
-      data <- data %>% filter(Injury == input$injury_type_plot10)
+    if (input$safety_device_plot != "All") {
+      data <- data %>% filter(Injury == input$safety_device_plot)
     }
     
     return(data)
   })
   
-  #Plot for Tab 10
-  output$plot10 <- renderPlot({
-    reactive_plot10_data() %>%
+  # safety_device_plot output
+  output$safety_device_plot <- renderPlot({
+    reactive_safety_device_plot_data() %>%
       ggplot(aes(x = as.factor(SafetyDevice))) + 
       geom_bar(fill = "steelblue") +
       labs(
@@ -872,24 +872,24 @@ server <- function(input, output, session) {
       theme_minimal()
   })
   
-  # Reactive data for plot 11
-  reactive_plot11_data <- reactive({
+  # Reactive data for age_frequency_plot
+  reactive_age_frequency_plot_data <- reactive({
     data <- reactive_crash_data()  
-    if (input$injury_type_plot11 != "All") {
-      data <- data %>% filter(Injury == input$injury_type_plot11)
+    if (input$age_frequency_plot != "All") {
+      data <- data %>% filter(Injury == input$age_frequency_plot)
     }
     
     return(data)
   })
   
-  #Plot for Tab 11
-  output$plot11 <- renderPlot({
-    reactive_plot11_data() %>%
+  # age_frequency_plot output
+  output$age_frequency_plot <- renderPlot({
+    reactive_age_frequency_plot_data() %>%
       ggplot(aes(x = Age)) + 
       geom_bar(fill = "steelblue") +
       scale_x_continuous(
-        breaks = seq(min(reactive_plot11_data()$Age, na.rm = TRUE), 
-                     max(reactive_plot11_data()$Age, na.rm = TRUE), 
+        breaks = seq(min(reactive_age_frequency_plot_data()$Age, na.rm = TRUE), 
+                     max(reactive_age_frequency_plot_data()$Age, na.rm = TRUE), 
                      by = 2)
       ) +
       labs(
