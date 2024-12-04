@@ -132,7 +132,8 @@ ui <- fluidPage(
         style = "margin-bottom: 0;",
         tags$strong("Application Instructions: "),
         tags$p("Navigate tabs for different data visualizations and data-specific controls.
-               All visualizations allow Troop selection and date range.")
+               All visualizations allow Troop selection and date range."),
+        tags$strong("Missouri by County/Troop:")
       ),
 
       tags$img(
@@ -250,6 +251,7 @@ ui <- fluidPage(
           value = "data_table",
           h3("All Crashes: Troops A, C, and F"),
           hr(),
+          uiOutput("summary_metrics"), 
           DTOutput("crash_data_table")
         ),
         
@@ -457,6 +459,30 @@ server <- function(input, output, session) {
         )
       )
     )
+  })
+
+  # Summary of main data table
+  output$summary_metrics <- renderUI({
+    data <- reactive_crash_data()
+    
+    if (nrow(data) == 0) {
+      return(div(p("No data available for the selected filters.", style = "color: red;")))
+    }
+    
+    total_crashes <- nrow(data)
+    most_common_injury <- names(which.max(table(data$Injury)))
+    most_active_county <- names(which.max(table(data$County)))
+    
+    summary_text <- paste(
+      "For the selected filters, there were", 
+      "<b>", total_crashes, "</b>", 
+      "crashes reported. The most common injury severity was", 
+      "<b>", most_common_injury, "</b>", 
+      "and the county with the highest crash activity was", 
+      "<b>", most_active_county, "</b>."
+    )
+    
+    div(HTML(summary_text), style = "max-width: 650px; margin-bottom: 2rem;")
   })
 
   # ========== Begin custom plots
