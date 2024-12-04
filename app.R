@@ -148,8 +148,11 @@ ui <- fluidPage(
                       "Troop C (includes: St. Louis)" = "C", 
                       "Troop F (includes: Columbia, Jefferson City)" = "F")),
       
-      dateRangeInput("date_range", "Date Range:",
-                    start = "2023-11-01", end = "2024-12-05"),
+      dateRangeInput(
+        "date_range",
+        "Date Range:",
+        start = "2023-12-01",
+        end = "2024-11-30"),
              
       # Plot 1 controls
       conditionalPanel(
@@ -441,9 +444,10 @@ server <- function(input, output, session) {
   # Main data table output
   output$crash_data_table <- renderDT({
     datatable(
-      reactive_crash_data(),
+      reactive_crash_data() %>% arrange(desc(Date)),
       options = list(
         pageLength = 10,
+        ordering = TRUE,
         initComplete = JS(
           "function(settings, json) {",
           "$(this.api().table().container()).css({'font-size': '12px'});",
@@ -451,7 +455,7 @@ server <- function(input, output, session) {
         )
       )
     )
-  })  
+  })
 
   # ========== Begin custom plots
   
